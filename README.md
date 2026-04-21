@@ -28,6 +28,12 @@ Scanner Bluetooth Low Energy qui détecte les appareils à proximité, affiche l
 Analyseur de spectre Wi-Fi 2.4 GHz en mode promiscuous — hopping sur les 13 canaux, score d'activité logarithmique, top 3 des canaux les plus chargés.  
 **Framework :** Arduino IDE · **Librairies :** LVGL 9.x, Adafruit NeoPixel
 
+### [LedRun](./LedRun/) — Arduino
+Affichage inspiré de [led.run](https://github.com/led-run/led.run) (MIT) — effets lumineux et texte géant pilotés à distance via HTTP/WiFi.  
+Modes : **bougie** (5 couches animées, warmth réglable), **texte** (police auto-adaptée 20→48 pt), **couleur unie**.  
+API REST : `GET /candle?warmth=8` · `GET /text?text=42&color=FFFFFF` · `GET /solid?color=FF0000`  
+**Framework :** Arduino IDE · **Librairies :** LVGL 9.x, Adafruit NeoPixel, WiFi + WebServer (core)
+
 ### [ThreadScan](./ThreadScan/) — Arduino
 Détecteur de réseaux Thread / Matter — energy scan IEEE 802.15.4 sur les 16 canaux (ch 11–26) pour localiser tout réseau Thread/Zigbee actif, combiné à un scan BLE filtré sur l'UUID de commissioning Matter `0xFFF6`.  
 **Framework :** Arduino IDE · **Librairies :** LVGL 9.x, Adafruit NeoPixel · **API native :** `esp_ieee802154` (ESP32 core 3.x)
@@ -85,6 +91,14 @@ Sélectionner la carte : **ESP32C6 Dev Module**.
 ├── BandWatch/                 ← sketch Arduino
 │   ├── BandWatch.ino
 │   ├── bandwatch.cpp / .h
+│   ├── Display_ST7789.cpp / .h
+│   ├── LVGL_Driver.cpp / .h
+│   └── lv_conf.h
+├── LedRun/                    ← sketch Arduino
+│   ├── LedRun.ino
+│   ├── ledrun.cpp / .h        ← WiFi + HTTP + dispatch modes
+│   ├── mode_candle.cpp / .h   ← effet bougie animé
+│   ├── mode_text.cpp / .h     ← texte / compteur géant
 │   ├── Display_ST7789.cpp / .h
 │   ├── LVGL_Driver.cpp / .h
 │   └── lv_conf.h
