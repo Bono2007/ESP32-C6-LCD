@@ -10,11 +10,11 @@ L'appareil devient un indicateur physique de l'état de Claude Code posé sur to
 
 | État | Déclencheur | Animation | LED |
 |------|-------------|-----------|-----|
-| **idle** | Démarrage / repos | Antenne qui pulse orange, clignement des yeux toutes ~4 s | Bleu doux pulsé |
-| **thinking** | Claude utilise un outil | Yeux qui balayent G↔D, antenne qui oscille, `...` en bas | Jaune pulsé |
-| **done** | Outil terminé | Flash vert, bras levés, grand sourire pendant 2 s | Vert bref |
-| **waiting** | Claude attend ta réponse | Robot qui bounce, bouche en frown, `?` rouge clignotant | Rouge flash |
-| **alert** | Alerte manuelle | Strobe rouge plein écran, bras alternés, `!` | Rouge stroboscope |
+| **idle** | Démarrage / repos | Oreilles pulsent orange, clignement des yeux toutes ~4 s | Orange doux pulsé |
+| **thinking** | Claude utilise un outil | Sourcils froncés, pupils qui bougent, oreilles oscillantes, `...` en bas | Jaune pulsé |
+| **done** | Fin de tâche | Flash vert, bras levés, grand sourire, sourcils relevés | Vert bref |
+| **waiting** | Claude attend ta réponse | **Corps entier qui saute**, bras alternés, overlay rouge pulsé, `?` blanc | Rouge stroboscope |
+| **alert** | Alerte manuelle | Strobe rouge plein écran, bras alternés, `!` clignotant | Rouge stroboscope |
 
 ---
 
@@ -119,12 +119,13 @@ L'intégration repose sur le système de **hooks** de Claude Code : des commande
 
 ### Principe
 
+Seulement 2 hooks sont nécessaires — `PostToolUse` est volontairement absent pour éviter les flashs verts parasites entre chaque outil :
+
 ```
 Claude Code                            ESP32-C6 ClaudeBot
 ──────────                             ──────────────────
 PreToolUse  ──→ curl /state?mode=thinking  ──→ 🤔 thinking
-PostToolUse ──→ curl /state?mode=done      ──→ ✅ done
-Stop        ──→ curl /state?mode=waiting   ──→ ❓ waiting
+Stop        ──→ curl /state?mode=waiting   ──→ ❓ waiting (rouge)
 ```
 
 Les hooks sont configurés avec `"async": true` pour ne **jamais bloquer** Claude Code — le `curl` part en tâche de fond avec un timeout de 1 seconde maximum.
@@ -148,18 +149,6 @@ Ajouter les entrées suivantes dans la section `"hooks"` (remplacer l'IP par cel
         ]
       }
     ],
-    "PostToolUse": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "curl -s --max-time 1 'http://10.0.0.175/state?mode=done' >/dev/null 2>&1 || true",
-            "async": true
-          }
-        ]
-      }
-    ],
     "Stop": [
       {
         "hooks": [
@@ -177,9 +166,11 @@ Ajouter les entrées suivantes dans la section `"hooks"` (remplacer l'IP par cel
 
 > Si tu as déjà des hooks existants, ajouter ces entrées dans les tableaux correspondants — ne pas remplacer les entrées existantes.
 
+> **Pourquoi pas `PostToolUse` ?** Claude utilise souvent 10–20 outils d'affilée. Déclencher un flash vert après chaque outil crée un clignotement confus. L'état **waiting** (rouge) est l'indicateur principal : il s'active uniquement quand Claude a fini et attend ta réponse.
+
 ### Vérifier que les hooks sont actifs
 
-Envoyer un message à Claude Code et observer le robot : il doit passer en **thinking** (yeux qui bougent) pendant l'exécution, puis **done** (flash vert) à la fin, puis **waiting** (rouge) quand Claude attend ta réponse.
+Envoyer un message à Claude Code et observer le robot : il doit passer en **thinking** (oreilles oscillantes, sourcils froncés) pendant l'exécution, puis **waiting** (rouge + bounce) quand Claude attend ta réponse.
 
 ---
 
@@ -214,68 +205,72 @@ Retourne un message de statut et le rappel des endpoints disponibles.
 
 ## Design du robot
 
-Le robot est entièrement dessiné avec les primitives LVGL — aucune image embarquée. Il est composé de 12 objets LVGL superposés sur un fond noir :
+Le robot est entièrement dessiné avec les primitives LVGL — aucune image embarquée. Il est composé de 17 objets LVGL superposés sur un fond noir :
 
 ```
-     [●]          ← antenne tip (orange, pulse)
-      │
- ┌─────────────┐  ← tête (bleu-violet, radius 20)
- │  ◉       ◉  │  ← yeux blancs + pupilles noires (mobiles)
- │     ⌣      │  ← bouche (arc LVGL, change selon état)
+ (●)   (●)        ← oreilles rondes (orange clair, pulsent en idle)
+ ┌─────────────┐  ← tête (orange Claude #D4501C, radius 26)
+ │ ▬       ▬  │  ← sourcils (brun, s'inclinent selon l'humeur)
+ │  ◉       ◉  │  ← yeux blancs chauds + pupilles (mobiles)
+ │      ⌣     │  ← bouche (arc LVGL, change selon état)
  └─────────────┘
-   [   corps   ]  ← body (bleu foncé)
- [bras]   [bras]  ← bras (se lèvent / bougent)
+   [   corps   ]  ← body (orange foncé #B43E12)
+ [bras]   [bras]  ← bras (se lèvent / s'agitent)
    [leg] [leg]    ← jambes
-       status     ← label texte en bas ("...", "?", "OK", "!")
+       status     ← label texte en bas ("...", "?", "!")
+   [  overlay  ]  ← rectangle plein écran pour les flashs colorés
 ```
 
-### Palette de couleurs
+### Palette de couleurs (Claude orange)
 
 | Élément | Couleur |
 |---------|---------|
-| Fond écran | `#06080F` (bleu nuit profond) |
-| Tête | `#34386E` (bleu-violet) |
-| Corps / bras / jambes | `#2A2D5E` (bleu foncé) |
-| Yeux | `#E8E8FF` (blanc légèrement bleuté) |
-| Pupilles | `#0A0A1A` (noir profond) |
-| Antenne tip | `#FF7043` (orange Claude) |
-| Antenne pole | `#4A90FF` (bleu électrique) |
-| Bouche | `#C8B4A0` (beige chair) |
+| Fond écran | `#06080F` (bleu nuit) |
+| Tête | `#D4501C` (orange Claude) |
+| Corps / bras / jambes | `#B43E12` (orange foncé) |
+| Oreilles | `#F06E37` (orange clair) |
+| Yeux | `#FFF0E6` (blanc chaud) |
+| Pupilles | `#140500` (brun-noir) |
+| Sourcils | `#782305` (brun sourcil) |
+| Bouche | `#FFC8AA` (beige peau) |
 
 ### Animations par état
 
 **idle**
-- Antenne tip : oscillation lente de la couleur orange (sinusoïde, ~6 s)
-- Yeux : clignement toutes les 3–5 s (pupils écrasés 2 frames puis rouverts)
-- LED : bleu pulsé doucement
+- Oreilles : couleur pulsée doucement (sinusoïde ~6 s)
+- Yeux : clignement toutes les 3–5 s (pupils écrasés 2 frames)
+- LED : orange pulsé doucement
 
 **thinking**
-- Pupils : balayage horizontal ±5 px (sinusoïde ~1 s)
-- Antenne tip : oscillation horizontale ±7 px (~0,6 s)
-- Bouche : petit arc neutre (30°)
-- Status : `"."` → `".."` → `"..."` cyclé toutes les 0,3 s
-- LED : jaune pulsé ~1 s
+- Pupils : déplacement gauche + haut (regard concentré)
+- Sourcils : froncés (rapprochés vers le bas)
+- Oreilles : oscillation horizontale rapide ±3 px
+- Status : `"."` → `".."` → `"..."` jaune
+- LED : jaune pulsé
 
-**waiting**
-- Bras : montée/descente ±4 px (sinusoïde ~0,5 s)
-- Bouche : arc inversé (frown, 20°→160°)
-- Status : `"?"` clignotant rouge (7/10 frames visible)
-- Overlay : légère teinte rouge pulsée (opacité 45)
-- LED : rouge flash 0,5 s on / 0,5 s off
+**waiting** ← état prioritaire
+- **Corps entier** (oreilles, tête, yeux, bouche, corps, jambes) : bounce vertical ±6 px (sinusoïde)
+- Bras : agitation alternée ±14 px (comme quelqu'un qui appelle)
+- Overlay : rouge intense pulsé (opacité 140–215)
+- Sourcils : levés (sourcils surpris)
+- Bouche : grande ouverte (surprise)
+- Status : grand `"?"` blanc (Montserrat 36) clignotant
+- LED : rouge stroboscopique (2 ticks on / 2 ticks off)
 
 **done**
-- Overlay : flash vert s'estompant sur 10 frames
-- Bras : remontés de 12 px
-- Bouche : grand sourire (190°→350°)
-- Status : `"OK"` vert
-- Retour automatique vers **idle** après 2 s (40 frames)
+- Overlay : flash vert décroissant sur 12 frames
+- Bras : remontés de 16 px
+- Bouche : grand sourire (185°→355°)
+- Sourcils : levés (joyeux)
+- Retour automatique vers **idle** après 1,75 s (35 frames)
 - LED : vert décroissant
 
 **alert**
-- Overlay : strobe rouge 50% opacité (2 frames on / 2 frames off)
+- Overlay : strobe rouge (2 frames on / 2 off)
+- Sourcils : froncés
 - Bouche : frown
 - Bras : alternance haut-bas (4 frames chacun)
-- Status : `"!"` clignotant rouge
+- Status : `"!"` blanc clignotant (Montserrat 36)
 - LED : rouge stroboscopique
 
 ---
