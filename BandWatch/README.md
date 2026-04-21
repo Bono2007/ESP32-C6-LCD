@@ -77,7 +77,13 @@ Paramètres obligatoires :
 ### Via arduino-cli (terminal)
 
 ```bash
-# Installation une seule fois (voir BLEWatch README pour le setup complet)
+# Installation une seule fois
+brew install arduino-cli
+arduino-cli config init
+arduino-cli config add board_manager.additional_urls \
+  https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+arduino-cli core update-index
+arduino-cli core install esp32:esp32
 arduino-cli lib install "lvgl@9.5.0" "Adafruit NeoPixel"
 
 # Compiler + flasher
