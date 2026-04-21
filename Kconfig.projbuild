@@ -12,7 +12,7 @@ menu "Proxmox Display Configuration"
     menu "Proxmox API"
         config PROXMOX_HOST
             string "Proxmox Host"
-            default "10.0.0.1"
+            default "10.0.0.10"
         config PROXMOX_PORT
             int "Proxmox Port"
             default 8006

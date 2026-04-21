@@ -60,7 +60,7 @@ void dashboard_ui_init(void)
     lv_obj_set_pos(lbl_title, 8, 4);
 
     lv_obj_t *lbl_host = lv_label_create(header);
-    lv_label_set_text(lbl_host, "10.0.0.1 \xc2\xb7 pve");
+    lv_label_set_text(lbl_host, "10.0.0.10 \xc2\xb7 pve");
     lv_obj_set_style_text_color(lbl_host, lv_color_hex(C_GRAY), 0);
     lv_obj_set_style_text_font(lbl_host, &lv_font_montserrat_10, 0);
     lv_obj_set_pos(lbl_host, 8, 18);
