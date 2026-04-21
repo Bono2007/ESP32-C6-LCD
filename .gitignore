@@ -2,3 +2,6 @@ build/
 sdkconfig
 managed_components/
 .superpowers/
+sdkconfig.defaults.local
+sdkconfig.old
+.DS_Store
