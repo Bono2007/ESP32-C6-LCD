@@ -1,8 +1,6 @@
 #pragma once
 
 #include <WiFi.h>
-#include <BLEDevice.h>
-#include <BLEScan.h>
 
 extern bool WIFI_Connection;
 extern int  WIFI_NUM;
