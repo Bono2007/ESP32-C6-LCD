@@ -3,7 +3,7 @@
 Dashboard temps réel sur écran LCD 1.47" (ST7789, 172×320 px) affichant les métriques d'un serveur Proxmox via son API REST HTTPS.
 
 <p align="center">
-  <img src="assets/screenshot.png" width="40%" alt="Dashboard"/>
+  <img src="assets/screenshot.png" width="130" alt="Dashboard"/>
 </p>
 
 ## Matériel requis
