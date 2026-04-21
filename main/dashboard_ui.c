@@ -1,6 +1,7 @@
 #include "dashboard_ui.h"
 #include "lvgl.h"
 #include <stdio.h>
+#include <inttypes.h>
 
 /* Couleurs */
 #define C_BG       0x0a0a1a
@@ -222,9 +223,9 @@ void dashboard_ui_update(const ui_data_t *data)
     uint32_t days  = data->uptime_s / 86400;
     uint32_t hours = (data->uptime_s % 86400) / 3600;
     uint32_t mins  = (data->uptime_s % 3600) / 60;
-    snprintf(buf, sizeof(buf), "%dj %02d:%02d", days, hours, mins);
+    snprintf(buf, sizeof(buf), "%"PRIu32"j %02"PRIu32":%02"PRIu32, days, hours, mins);
     lv_label_set_text(s_lbl_uptime, buf);
 
-    snprintf(buf, sizeof(buf), "M\xc3\xa0J il y a %ds", data->last_update_s);
+    snprintf(buf, sizeof(buf), "M\xc3\xa0J il y a %"PRIu32"s", data->last_update_s);
     lv_label_set_text(s_lbl_footer, buf);
 }
