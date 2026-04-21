@@ -28,6 +28,10 @@ Scanner Bluetooth Low Energy qui détecte les appareils à proximité, affiche l
 Analyseur de spectre Wi-Fi 2.4 GHz en mode promiscuous — hopping sur les 13 canaux, score d'activité logarithmique, top 3 des canaux les plus chargés.  
 **Framework :** Arduino IDE · **Librairies :** LVGL 9.x, Adafruit NeoPixel
 
+### [ThreadScan](./ThreadScan/) — Arduino
+Détecteur de réseaux Thread / Matter — energy scan IEEE 802.15.4 sur les 16 canaux (ch 11–26) pour localiser tout réseau Thread/Zigbee actif, combiné à un scan BLE filtré sur l'UUID de commissioning Matter `0xFFF6`.  
+**Framework :** Arduino IDE · **Librairies :** LVGL 9.x, Adafruit NeoPixel · **API native :** `esp_ieee802154` (ESP32 core 3.x)
+
 ---
 
 ## Prérequis communs (Arduino)
@@ -44,11 +48,13 @@ Sélectionner la carte : **ESP32C6 Dev Module**.
 
 ### 2. Librairies à installer (Gestionnaire de librairies)
 
-| Librairie | Version |
-|-----------|---------|
-| **lvgl** | 9.x |
-| **Adafruit NeoPixel** | dernière |
-| **NimBLE-Arduino** | dernière (pour BLEWatch) |
+| Librairie | Version | Projets |
+|-----------|---------|---------|
+| **lvgl** | 9.5.0 | tous |
+| **Adafruit NeoPixel** | dernière | tous |
+
+> BLEWatch et ThreadScan utilisent le stack BLE Bluedroid inclus dans le core ESP32 (`BLEDevice.h`) — aucune librairie BLE supplémentaire n'est nécessaire.  
+> L'API `esp_ieee802154` (ThreadScan) est également fournie par le core ESP32 3.x.
 
 ### 3. Paramètres de flash recommandés
 
@@ -76,9 +82,15 @@ Sélectionner la carte : **ESP32C6 Dev Module**.
 │   ├── LVGL_Driver.cpp / .h
 │   ├── Wireless.cpp / .h
 │   └── lv_conf.h
-└── BandWatch/                 ← sketch Arduino
-    ├── bandwatch.ino
-    ├── bandwatch.cpp / .h
+├── BandWatch/                 ← sketch Arduino
+│   ├── BandWatch.ino
+│   ├── bandwatch.cpp / .h
+│   ├── Display_ST7789.cpp / .h
+│   ├── LVGL_Driver.cpp / .h
+│   └── lv_conf.h
+└── ThreadScan/                ← sketch Arduino
+    ├── ThreadScan.ino
+    ├── threadscan.cpp / .h
     ├── Display_ST7789.cpp / .h
     ├── LVGL_Driver.cpp / .h
     └── lv_conf.h
