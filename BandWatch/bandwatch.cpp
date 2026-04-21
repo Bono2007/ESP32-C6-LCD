@@ -1,6 +1,8 @@
 #include "bandwatch.h"
 #include "LVGL_Driver.h"
 #include <WiFi.h>
+#include <esp_wifi.h>
+#include <esp_wifi_types.h>
 #include <Adafruit_NeoPixel.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
