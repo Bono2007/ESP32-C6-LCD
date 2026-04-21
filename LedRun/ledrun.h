@@ -2,8 +2,8 @@
 #include "LVGL_Driver.h"
 
 /* ── WiFi ─────────────────────────────────────────────── */
-#define WIFI_SSID     "Xiaomi_A50B"
-#define WIFI_PASSWORD "Pythagore"
+#define WIFI_SSID     "VotreSSID"
+#define WIFI_PASSWORD "VotreMotDePasse"
 #define HTTP_PORT     80
 
 /* ── Mode par défaut ──────────────────────────────────── */
