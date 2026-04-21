@@ -28,11 +28,11 @@ menu "Proxmox Display Configuration"
         config LCD_CLK_GPIO
             int "SPI Clock GPIO"
             range 0 30
-            default 6
+            default 7
         config LCD_MOSI_GPIO
             int "SPI MOSI GPIO"
             range 0 30
-            default 7
+            default 6
         config LCD_CS_GPIO
             int "LCD CS GPIO"
             range 0 30

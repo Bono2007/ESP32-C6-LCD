@@ -16,9 +16,7 @@ static int s_retry = 0;
 static void event_handler(void *arg, esp_event_base_t base,
                            int32_t id, void *data)
 {
-    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
+    if (base == WIFI_EVENT && id == WIFI_EVENT_STA_DISCONNECTED) {
         if (s_retry < MAX_RETRY) {
             esp_wifi_connect();
             s_retry++;
@@ -58,9 +56,24 @@ esp_err_t wifi_manager_init(void)
             .password = CONFIG_WIFI_PASSWORD,
         },
     };
+    /* Démarrer en mode scan uniquement (pas d'event handlers encore) */
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_cfg));
     ESP_ERROR_CHECK(esp_wifi_start());
+
+    /* Scanner sans déclencher la connexion automatique */
+    wifi_scan_config_t scan_cfg = { .scan_type = WIFI_SCAN_TYPE_ACTIVE };
+    if (esp_wifi_scan_start(&scan_cfg, true) == ESP_OK) {
+        uint16_t n = 20;
+        wifi_ap_record_t aps[20];
+        esp_wifi_scan_get_ap_records(&n, aps);
+        ESP_LOGI(TAG, "Réseaux visibles (%d):", n);
+        for (uint16_t i = 0; i < n; i++) {
+            ESP_LOGI(TAG, "  SSID: %-32s  RSSI: %d", aps[i].ssid, aps[i].rssi);
+        }
+    }
+    ESP_LOGI(TAG, "Connexion à: '%s'", CONFIG_WIFI_SSID);
+    esp_wifi_connect();
 
     EventBits_t bits = xEventGroupWaitBits(s_wifi_events,
                                             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,

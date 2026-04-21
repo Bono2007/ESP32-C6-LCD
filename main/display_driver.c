@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include "lvgl.h"
 #include "sdkconfig.h"
+#include <string.h>
 
 static const char *TAG = "display";
 
@@ -45,7 +46,7 @@ esp_err_t display_driver_init(void)
     esp_lcd_panel_io_spi_config_t io_cfg = {
         .dc_gpio_num       = CONFIG_LCD_DC_GPIO,
         .cs_gpio_num       = CONFIG_LCD_CS_GPIO,
-        .pclk_hz           = 40 * 1000 * 1000,
+        .pclk_hz           = 10 * 1000 * 1000,
         .lcd_cmd_bits      = 8,
         .lcd_param_bits    = 8,
         .spi_mode          = 0,
@@ -62,11 +63,13 @@ esp_err_t display_driver_init(void)
     ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io, &panel_cfg, &s_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_reset(s_panel));
     ESP_ERROR_CHECK(esp_lcd_panel_init(s_panel));
+    vTaskDelay(pdMS_TO_TICKS(120));
     ESP_ERROR_CHECK(esp_lcd_panel_invert_color(s_panel, true));
     /* Offset colonne requis pour ST7789 172px (contrôleur interne 240px) */
     ESP_ERROR_CHECK(esp_lcd_panel_set_gap(s_panel, 34, 0));
     ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(s_panel, true));
 
+    /* Backlight ON avant le test pour voir les couleurs */
     ESP_LOGI(TAG, "Backlight ON");
     gpio_config_t bl_cfg = {
         .pin_bit_mask = 1ULL << CONFIG_LCD_BL_GPIO,
@@ -74,6 +77,20 @@ esp_err_t display_driver_init(void)
     };
     gpio_config(&bl_cfg);
     gpio_set_level(CONFIG_LCD_BL_GPIO, 1);
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    /* TEST HARDWARE : bandes couleur (INVON actif : 0x0000=blanc, 0xF800=cyan, 0x07E0=magenta) */
+    {
+        static uint16_t test_line[LCD_H_RES];
+        for (int y = 0; y < LCD_V_RES; y++) {
+            uint16_t color = (y < 107) ? 0x0000 :   /* blanc  */
+                             (y < 214) ? 0xF800 :   /* cyan   */
+                             0x07E0;                /* magenta */
+            for (int x = 0; x < LCD_H_RES; x++) test_line[x] = color;
+            esp_lcd_panel_draw_bitmap(s_panel, 0, y, LCD_H_RES, y + 1, test_line);
+        }
+        ESP_LOGI(TAG, "TEST: 3 bandes couleur envoyees");
+    }
 
     ESP_LOGI(TAG, "Init LVGL");
     lv_init();

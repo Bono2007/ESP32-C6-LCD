@@ -77,17 +77,20 @@ esp_err_t proxmox_client_fetch(proxmox_data_t *out)
         .event_handler               = http_event_handler,
         .skip_cert_common_name_check = true,
         .transport_type              = HTTP_TRANSPORT_OVER_SSL,
-        .timeout_ms                  = 5000,
+        .timeout_ms                  = 15000,
+        .crt_bundle_attach           = NULL,
+        .use_global_ca_store         = false,
     };
     esp_http_client_handle_t client = esp_http_client_init(&cfg);
     esp_http_client_set_header(client, "Authorization", auth_header);
 
+    ESP_LOGI(TAG, "Fetch URL: %s", url);
     esp_err_t ret = esp_http_client_perform(client);
     int status    = esp_http_client_get_status_code(client);
     esp_http_client_cleanup(client);
 
     if (ret != ESP_OK || status != 200) {
-        ESP_LOGE(TAG, "HTTP error: ret=%d status=%d", ret, status);
+        ESP_LOGE(TAG, "HTTP error: ret=0x%x (%s) status=%d", ret, esp_err_to_name(ret), status);
         return ESP_FAIL;
     }
 

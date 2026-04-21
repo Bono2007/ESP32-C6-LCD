@@ -4,4 +4,10 @@ managed_components/
 .superpowers/
 sdkconfig.defaults.local
 sdkconfig.old
+dependencies.lock
+test/
+docs/
 .DS_Store
+.vscode/
+.idea/
+*.swp
