@@ -95,7 +95,6 @@ static void fetch_task(void *arg)
 
 void app_main(void)
 {
-    vTaskDelay(pdMS_TO_TICKS(3000));
     ESP_LOGI(TAG, "Proxmox Display v1.0");
 
     /* NVS init unique — avant tout module qui pourrait en avoir besoin */
