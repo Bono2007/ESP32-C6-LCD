@@ -212,14 +212,11 @@ static void tick_idle(void)
 {
     float p = sinf(s_tick * 0.05f);
 
-    /* Oreilles pulsent doucement */
+    /* Oreilles pulsent (couleur change = zone locale) */
     uint8_t er = (uint8_t)(220 + p * 20);
     uint8_t eg = (uint8_t)( 95 + p * 15);
     lv_obj_set_style_bg_color(s_ear_l, lv_color_make(er, eg, 45), 0);
     lv_obj_set_style_bg_color(s_ear_r, lv_color_make(er, eg, 45), 0);
-
-    /* Sourcils neutres */
-    set_brows(0, 0);
 
     /* Clignement */
     if (!s_blinking && s_tick >= s_blink_at) {
@@ -241,10 +238,6 @@ static void tick_idle(void)
         }
     }
 
-    set_mouth(195, 345, C_MOUTH);
-    set_overlay(lv_color_black(), LV_OPA_TRANSP);
-    lv_label_set_text(s_status, "");
-
     /* LED : orange doux pulsé */
     uint8_t lb = (uint8_t)(25 + (p + 1.0f) * 20.0f);
     ClaudeBot_SetLED(lb, lb / 5, 0);
@@ -253,48 +246,36 @@ static void tick_idle(void)
 /* ── THINKING ──────────────────────────────────────── */
 static void tick_thinking(void)
 {
-    /* Pupilles montent légèrement à gauche (concentration) */
+    /* Pupilles qui bougent (zone locale) */
     int dx = (int)(sinf(s_tick * 0.2f) * 4.0f) - 2;
-    int dy = -3;
-    set_pupils(dx, dy);
+    set_pupils(dx, -3);
 
-    /* Sourcils froncés (vers le bas, rapprochés) */
-    set_brows(-2, 4);
-
-    /* Oreilles oscillent vite */
+    /* Oreilles oscillent (zone locale) */
     int ox = (int)(sinf(s_tick * 0.8f) * 3.0f);
     lv_obj_set_pos(s_ear_l, EAR_L_CX - EAR_R + ox, EAR_L_CY - EAR_R);
     lv_obj_set_pos(s_ear_r, EAR_R_CX - EAR_R + ox, EAR_R_CY - EAR_R);
 
-    set_mouth(255, 285, C_MOUTH);   /* bouche neutre/fermée */
-
+    /* Dots (texte = zone locale) */
     static const char *dots[] = {".", "..", "..."};
     lv_label_set_text(s_status, dots[(s_tick / 5) % 3]);
-    lv_obj_set_style_text_font(s_status, &lv_font_montserrat_14, 0);
-    lv_obj_set_style_text_color(s_status, lv_color_make(255, 200, 80), 0);
-
-    set_overlay(lv_color_black(), LV_OPA_TRANSP);
 
     /* LED : jaune pulsé */
     float p = (sinf(s_tick * 0.4f) + 1.0f) * 0.5f;
     ClaudeBot_SetLED((uint8_t)(70 * p), (uint8_t)(55 * p), 0);
 }
 
-/* ── WAITING — priorité rouge festive ──────────────── */
+/* ── WAITING ────────────────────────────────────────── */
 static void tick_waiting(void)
 {
-    /* Fond rouge qui pulse entre 55% et 85% opacité */
-    float p = (sinf(s_tick * 0.4f) + 1.0f) * 0.5f;
-    lv_opa_t opa = (lv_opa_t)(140 + (uint8_t)(75 * p));
-    set_overlay(C_RED, opa);
+    /* Pas d'overlay animé — évite le redraw plein écran chaque tick */
 
-    /* Robot qui saute — tête, corps, bras, jambes bougent ensemble */
-    int dy = (int)(sinf(s_tick * 0.8f) * 6.0f);
+    /* Petit bounce — tout le corps */
+    int dy = (int)(sinf(s_tick * 0.6f) * 4.0f);
     lv_obj_set_pos(s_ear_l, EAR_L_CX - EAR_R, EAR_L_CY - EAR_R + dy);
     lv_obj_set_pos(s_ear_r, EAR_R_CX - EAR_R, EAR_R_CY - EAR_R + dy);
     lv_obj_set_pos(s_head,  HEAD_X, HEAD_Y + dy);
-    lv_obj_set_pos(s_brow_l, BROW_L_X, BROW_Y + dy - 3);  /* sourcils levés */
-    lv_obj_set_pos(s_brow_r, BROW_R_X, BROW_Y + dy - 3);
+    lv_obj_set_pos(s_brow_l, BROW_L_X, BROW_Y + dy);
+    lv_obj_set_pos(s_brow_r, BROW_R_X, BROW_Y + dy);
     lv_obj_set_pos(s_eye_l, EL_CX - EYE_R, EL_CY - EYE_R + dy);
     lv_obj_set_pos(s_eye_r, ER_CX - EYE_R, ER_CY - EYE_R + dy);
     lv_obj_set_pos(s_pup_l, EL_CX - PUP_R, EL_CY - PUP_R + dy);
@@ -304,24 +285,25 @@ static void tick_waiting(void)
     lv_obj_set_pos(s_leg_l, LEG_LX, LEG_Y + dy);
     lv_obj_set_pos(s_leg_r, LEG_RX, LEG_Y + dy);
 
-    /* Bras qui agitent alternativement */
-    int arm_dy_l = (s_tick % 8 < 4) ? dy - 14 : dy + 4;
-    int arm_dy_r = (s_tick % 8 < 4) ? dy + 4  : dy - 14;
+    /* Bras alternés */
+    int arm_dy_l = (s_tick % 10 < 5) ? dy - 8 : dy + 2;
+    int arm_dy_r = (s_tick % 10 < 5) ? dy + 2  : dy - 8;
     lv_obj_set_pos(s_arm_l, ARM_LX, ARM_Y + arm_dy_l);
     lv_obj_set_pos(s_arm_r, ARM_RX, ARM_Y + arm_dy_r);
 
-    /* Bouche ouverte (surprise) */
-    set_mouth(150, 390, lv_color_make(255, 100, 100));
+    /* Petit frown */
+    set_mouth(20, 160, C_MOUTH);
 
-    /* Grand "?" clignotant */
-    bool show = (s_tick % 6) < 4;
+    /* "?" clignotant — ne change que 2 fois par seconde */
+    bool show = (s_tick % 20) < 10;
     lv_label_set_text(s_status, show ? "?" : "");
     lv_obj_set_style_text_font(s_status, &lv_font_montserrat_36, 0);
-    lv_obj_set_style_text_color(s_status, lv_color_white(), 0);
+    lv_obj_set_style_text_color(s_status, lv_color_make(220, 60, 60), 0);
     lv_obj_set_pos(s_status, 0, 270);
 
-    /* LED : rouge stroboscope */
-    ClaudeBot_SetLED((s_tick % 4 < 2) ? 220 : 50, 0, 0);
+    /* LED : rouge doux pulsé — NeoPixel ne ralentit pas l'écran */
+    float p = (sinf(s_tick * 0.3f) + 1.0f) * 0.5f;
+    ClaudeBot_SetLED((uint8_t)(60 + 60 * p), 0, 0);
 }
 
 /* ── DONE ──────────────────────────────────────────── */
@@ -329,26 +311,17 @@ static void tick_done(void)
 {
     uint32_t dt = s_tick - s_done_t0;
 
-    /* Flash vert décroissant */
+    /* Flash vert décroissant — overlay change 1×/tick mais c'est court (12 ticks) */
     if (dt < 12) {
         lv_opa_t opa = (lv_opa_t)(LV_OPA_COVER * (1.0f - dt / 12.0f));
         set_overlay(C_GREEN, opa);
         ClaudeBot_SetLED(0, (uint8_t)(100 * (1.0f - dt / 12.0f)), 0);
-    } else {
+    } else if (dt == 12) {
         set_overlay(lv_color_black(), LV_OPA_TRANSP);
         ClaudeBot_SetLED(0, 0, 0);
     }
 
-    /* Bras levés, grand sourire */
-    lv_obj_set_pos(s_arm_l, ARM_LX, ARM_Y - 16);
-    lv_obj_set_pos(s_arm_r, ARM_RX, ARM_Y - 16);
-    set_mouth(185, 355, C_MOUTH);
-    set_brows(0, -4);  /* sourcils levés = joyeux */
-
-    lv_label_set_text(s_status, "");
-
     if (dt >= 35) {
-        reset_arms();
         Robot_SetState(BOT_IDLE);
     }
 }
@@ -357,15 +330,14 @@ static void tick_done(void)
 static void tick_alert(void)
 {
     bool on = (s_tick % 4) < 2;
-    set_overlay(C_RED, on ? LV_OPA_60 : LV_OPA_TRANSP);
+
+    /* Overlay change uniquement au basculement (2 fois par cycle) */
+    if (s_tick % 2 == 0)
+        set_overlay(C_RED, on ? LV_OPA_60 : LV_OPA_TRANSP);
+
     ClaudeBot_SetLED(on ? 220 : 0, 0, 0);
-    set_mouth(20, 160, lv_color_make(255, 80, 80));
-    set_brows(-3, 4);
 
     lv_label_set_text(s_status, on ? "!" : "");
-    lv_obj_set_style_text_font(s_status, &lv_font_montserrat_36, 0);
-    lv_obj_set_style_text_color(s_status, lv_color_white(), 0);
-    lv_obj_set_pos(s_status, 0, STATUS_Y);
 
     lv_obj_set_pos(s_arm_l, ARM_LX, (s_tick % 8 < 4) ? ARM_Y - 12 : ARM_Y);
     lv_obj_set_pos(s_arm_r, ARM_RX, (s_tick % 8 < 4) ? ARM_Y       : ARM_Y - 12);
@@ -392,23 +364,179 @@ static void reset_all_positions(void)
     reset_arms();
 }
 
+/* ── WORKING — bras qui s'activent (PreToolUse) ────── */
+static void tick_working(void)
+{
+    /* Bras tapent en alternance rapide (période 6 ticks = 300ms) */
+    bool left_up = (s_tick % 6) < 3;
+    lv_obj_set_pos(s_arm_l, ARM_LX, left_up  ? ARM_Y - 14 : ARM_Y + 4);
+    lv_obj_set_pos(s_arm_r, ARM_RX, left_up  ? ARM_Y + 4  : ARM_Y - 14);
+
+    /* Pupils regardent vers le bas (concentré sur le travail) */
+    set_pupils(0, 4);
+
+    /* Dots */
+    static const char *dots[] = {".", "..", "..."};
+    lv_label_set_text(s_status, dots[(s_tick / 4) % 3]);
+
+    /* LED : orange actif */
+    float p = (sinf(s_tick * 0.5f) + 1.0f) * 0.5f;
+    ClaudeBot_SetLED((uint8_t)(80 + 40 * p), (uint8_t)(30 + 15 * p), 0);
+}
+
+/* ── JUGGLING — SubagentStart ───────────────────────── */
+static void tick_juggling(void)
+{
+    /* Bras en opposition de phase sinusoïdale (jonglage) */
+    float phase = s_tick * 0.5f;
+    int arm_l_dy = (int)(sinf(phase) * 16.0f);
+    int arm_r_dy = (int)(sinf(phase + 3.14159f) * 16.0f);  /* phase opposée */
+    lv_obj_set_pos(s_arm_l, ARM_LX, ARM_Y + arm_l_dy);
+    lv_obj_set_pos(s_arm_r, ARM_RX, ARM_Y + arm_r_dy);
+
+    /* Pupils qui suivent alternativement gauche/droite */
+    int pdx = (int)(sinf(phase) * 5.0f);
+    set_pupils(pdx, 0);
+
+    /* Corps qui oscille légèrement */
+    int body_dx = (int)(sinf(phase * 0.5f) * 2.0f);
+    lv_obj_set_pos(s_body, BODY_X + body_dx, BODY_Y);
+
+    lv_label_set_text(s_status, "");
+
+    /* LED : violet pulsé (multi-agents) */
+    float p = (sinf(phase * 0.4f) + 1.0f) * 0.5f;
+    ClaudeBot_SetLED((uint8_t)(50 * p), 0, (uint8_t)(80 * p));
+}
+
+/* ── SWEEPING — PreCompact ──────────────────────────── */
+static void tick_sweeping(void)
+{
+    /* Corps qui penche de gauche à droite (balayage mémoire) */
+    float phase = s_tick * 0.25f;
+    int dx = (int)(sinf(phase) * 8.0f);
+    lv_obj_set_pos(s_head,  HEAD_X  + dx, HEAD_Y);
+    lv_obj_set_pos(s_ear_l, EAR_L_CX - EAR_R + dx, EAR_L_CY - EAR_R);
+    lv_obj_set_pos(s_ear_r, EAR_R_CX - EAR_R + dx, EAR_R_CY - EAR_R);
+    lv_obj_set_pos(s_brow_l, BROW_L_X + dx, BROW_Y);
+    lv_obj_set_pos(s_brow_r, BROW_R_X + dx, BROW_Y);
+    lv_obj_set_pos(s_eye_l, EL_CX - EYE_R + dx, EL_CY - EYE_R);
+    lv_obj_set_pos(s_eye_r, ER_CX - EYE_R + dx, ER_CY - EYE_R);
+    lv_obj_set_pos(s_pup_l, EL_CX - PUP_R + dx, EL_CY - PUP_R);
+    lv_obj_set_pos(s_pup_r, ER_CX - PUP_R + dx, ER_CY - PUP_R);
+
+    /* Bras balayent en opposition */
+    lv_obj_set_pos(s_arm_l, ARM_LX - dx, ARM_Y + 8);
+    lv_obj_set_pos(s_arm_r, ARM_RX - dx, ARM_Y + 8);
+
+    /* LED : cyan pulsé (compactage) */
+    float p = (sinf(phase * 0.6f) + 1.0f) * 0.5f;
+    ClaudeBot_SetLED(0, (uint8_t)(40 * p), (uint8_t)(60 * p));
+}
+
+/* ── SLEEPING — SessionEnd ──────────────────────────── */
+static void tick_sleeping(void)
+{
+    /* Respiration très lente */
+    float p = (sinf(s_tick * 0.03f) + 1.0f) * 0.5f;
+    int dy = (int)(p * 3.0f);
+
+    lv_obj_set_pos(s_body, BODY_X, BODY_Y + dy);
+
+    /* Yeux fermés (pupils écrasés en permanence) */
+    lv_obj_set_size(s_pup_l, PUP_R * 2, 2);
+    lv_obj_set_size(s_pup_r, PUP_R * 2, 2);
+    lv_obj_set_pos(s_pup_l, EL_CX - PUP_R, EL_CY - 1);
+    lv_obj_set_pos(s_pup_r, ER_CX - PUP_R, ER_CY - 1);
+
+    /* "z" clignotant très lent */
+    bool show = (s_tick % 40) < 25;
+    lv_label_set_text(s_status, show ? "z" : "");
+
+    /* LED : quasi éteinte, bleu très doux */
+    ClaudeBot_SetLED(0, 0, (uint8_t)(8 + 8 * p));
+}
+
 void Robot_Tick(void)
 {
     s_tick++;
     switch (s_state) {
         case BOT_IDLE:     tick_idle();     break;
         case BOT_THINKING: tick_thinking(); break;
+        case BOT_WORKING:  tick_working();  break;
+        case BOT_JUGGLING: tick_juggling(); break;
+        case BOT_SWEEPING: tick_sweeping(); break;
+        case BOT_SLEEPING: tick_sleeping(); break;
         case BOT_WAITING:  tick_waiting();  break;
         case BOT_DONE:     tick_done();     break;
         case BOT_ALERT:    tick_alert();    break;
     }
 }
 
+static void enter_state(bot_state_t new_state)
+{
+    reset_all_positions();
+    set_overlay(lv_color_black(), LV_OPA_TRANSP);
+    lv_label_set_text(s_status, "");
+
+    switch (new_state) {
+        case BOT_IDLE:
+            set_mouth(195, 345, C_MOUTH);
+            set_brows(0, 0);
+            set_pupils(0, 0);
+            break;
+        case BOT_THINKING:
+            set_mouth(255, 285, C_MOUTH);
+            set_brows(-2, 4);
+            lv_obj_set_style_text_font(s_status, &lv_font_montserrat_14, 0);
+            lv_obj_set_style_text_color(s_status, lv_color_make(255, 200, 80), 0);
+            break;
+        case BOT_WORKING:
+            set_mouth(200, 340, C_MOUTH);
+            set_brows(0, 2);
+            lv_obj_set_style_text_font(s_status, &lv_font_montserrat_14, 0);
+            lv_obj_set_style_text_color(s_status, lv_color_make(255, 160, 60), 0);
+            break;
+        case BOT_JUGGLING:
+            set_mouth(185, 355, C_MOUTH);
+            set_brows(0, -2);
+            break;
+        case BOT_SWEEPING:
+            set_mouth(200, 340, C_MOUTH);
+            set_brows(0, 0);
+            lv_label_set_text(s_status, "");
+            break;
+        case BOT_SLEEPING:
+            set_mouth(195, 345, C_MOUTH);
+            set_brows(0, 0);
+            lv_obj_set_style_text_font(s_status, &lv_font_montserrat_14, 0);
+            lv_obj_set_style_text_color(s_status, lv_color_make(100, 120, 180), 0);
+            break;
+        case BOT_WAITING:
+            set_mouth(20, 160, C_MOUTH);
+            lv_obj_set_style_text_font(s_status, &lv_font_montserrat_36, 0);
+            lv_obj_set_style_text_color(s_status, lv_color_make(220, 60, 60), 0);
+            lv_obj_set_pos(s_status, 0, 270);
+            break;
+        case BOT_DONE:
+            s_done_t0 = s_tick;
+            lv_obj_set_pos(s_arm_l, ARM_LX, ARM_Y - 16);
+            lv_obj_set_pos(s_arm_r, ARM_RX, ARM_Y - 16);
+            set_mouth(185, 355, C_MOUTH);
+            set_brows(0, -4);
+            break;
+        case BOT_ALERT:
+            set_mouth(20, 160, lv_color_make(255, 80, 80));
+            set_brows(-3, 4);
+            lv_obj_set_style_text_font(s_status, &lv_font_montserrat_36, 0);
+            lv_obj_set_style_text_color(s_status, lv_color_white(), 0);
+            break;
+    }
+}
+
 void Robot_SetState(bot_state_t new_state)
 {
     if (new_state == s_state) return;
-    reset_all_positions();
-    set_overlay(lv_color_black(), LV_OPA_TRANSP);
     s_state = new_state;
-    if (new_state == BOT_DONE) s_done_t0 = s_tick;
+    enter_state(new_state);
 }

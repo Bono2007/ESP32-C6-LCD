@@ -8,6 +8,10 @@
 typedef enum {
     BOT_IDLE,
     BOT_THINKING,
+    BOT_WORKING,
+    BOT_JUGGLING,
+    BOT_SWEEPING,
+    BOT_SLEEPING,
     BOT_WAITING,
     BOT_DONE,
     BOT_ALERT,

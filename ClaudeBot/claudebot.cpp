@@ -27,6 +27,10 @@ static void handle_state(void)
     bot_state_t st = BOT_IDLE;
 
     if      (mode == "thinking") st = BOT_THINKING;
+    else if (mode == "working")  st = BOT_WORKING;
+    else if (mode == "juggling") st = BOT_JUGGLING;
+    else if (mode == "sweeping") st = BOT_SWEEPING;
+    else if (mode == "sleeping") st = BOT_SLEEPING;
     else if (mode == "waiting")  st = BOT_WAITING;
     else if (mode == "done")     st = BOT_DONE;
     else if (mode == "alert")    st = BOT_ALERT;
@@ -40,7 +44,7 @@ static void handle_root(void)
 {
     s_server.send(200, "text/plain",
         "ClaudeBot OK\n"
-        "GET /state?mode=idle|thinking|waiting|done|alert\n");
+        "GET /state?mode=idle|thinking|working|juggling|sweeping|sleeping|waiting|done|alert\n");
 }
 
 /* ── Init ──────────────────────────────────────────── */
