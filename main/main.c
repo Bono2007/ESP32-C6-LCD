@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "freertos/semphr.h"
 #include "display_driver.h"
 #include "wifi_manager.h"
 #include "proxmox_client.h"
@@ -11,21 +12,31 @@
 #include "lvgl.h"
 #include "sdkconfig.h"
 
-static const char    *TAG = "main";
-static QueueHandle_t  s_data_queue;
+static const char      *TAG = "main";
+static QueueHandle_t    s_data_queue;
+static SemaphoreHandle_t s_lvgl_mux;
 
 static uint64_t s_prev_netout = 0;
 static uint64_t s_prev_netin  = 0;
 static bool     s_first_fetch = true;
 static uint32_t s_last_update_s = 0;
 
+/* Prendre le mutex LVGL, mettre à jour l'UI, relâcher */
+static void ui_update_locked(const ui_data_t *data)
+{
+    xSemaphoreTake(s_lvgl_mux, portMAX_DELAY);
+    dashboard_ui_update(data);
+    xSemaphoreGive(s_lvgl_mux);
+}
+
 static void lvgl_task(void *arg)
 {
     uint32_t tick_count = 0;
     while (1) {
+        xSemaphoreTake(s_lvgl_mux, portMAX_DELAY);
         lv_timer_handler();
+        xSemaphoreGive(s_lvgl_mux);
         vTaskDelay(pdMS_TO_TICKS(5));
-        /* Incrémenter le compteur de secondes depuis la dernière MàJ (~200 iters = 1s) */
         if (++tick_count >= 200) {
             tick_count = 0;
             if (s_last_update_s < UINT32_MAX) s_last_update_s++;
@@ -63,7 +74,7 @@ static void ui_update_task(void *arg)
                 .connected     = true,
                 .last_update_s = 0,
             };
-            dashboard_ui_update(&ui);
+            ui_update_locked(&ui);
         }
     }
 }
@@ -88,7 +99,7 @@ static void fetch_task(void *arg)
                 .connected     = false,
                 .last_update_s = s_last_update_s,
             };
-            dashboard_ui_update(&err_ui);
+            ui_update_locked(&err_ui);
         }
     }
 }
@@ -97,7 +108,6 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "Proxmox Display v1.0");
 
-    /* NVS init unique — avant tout module qui pourrait en avoir besoin */
     esp_err_t nvs_ret = nvs_flash_init();
     if (nvs_ret == ESP_ERR_NVS_NO_FREE_PAGES || nvs_ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -105,7 +115,8 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(nvs_ret);
 
-    /* Display en premier pour afficher l'état de boot */
+    s_lvgl_mux = xSemaphoreCreateMutex();
+
     ESP_ERROR_CHECK(display_driver_init());
     dashboard_ui_init();
 
@@ -116,9 +127,8 @@ void app_main(void)
     xTaskCreate(ui_update_task, "ui_upd",  4096, NULL, 3, NULL);
     xTaskCreate(fetch_task,     "fetch",   8192, NULL, 3, &fetch_handle);
 
-    /* Afficher état WiFi en cours */
     ui_data_t boot_ui = { .connected = false, .last_update_s = 0 };
-    dashboard_ui_update(&boot_ui);
+    ui_update_locked(&boot_ui);
 
     esp_err_t wifi_ret = wifi_manager_init();
     if (wifi_ret != ESP_OK) {
@@ -129,10 +139,8 @@ void app_main(void)
 
     ESP_ERROR_CHECK(proxmox_client_init());
 
-    /* Premier fetch immédiat */
     xTaskNotifyGive(fetch_handle);
 
-    /* Timer récurrent */
     esp_timer_handle_t timer;
     esp_timer_create_args_t timer_args = {
         .callback = fetch_timer_cb,
