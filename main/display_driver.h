@@ -1,6 +1,7 @@
 #pragma once
+#include "esp_err.h"
 
-/**
- * @brief Initialize the ST7789 LCD and LVGL display driver.
- */
-void display_driver_init(void);
+#define LCD_H_RES 172
+#define LCD_V_RES 320
+
+esp_err_t display_driver_init(void);

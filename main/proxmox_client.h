@@ -1,19 +1,16 @@
 #pragma once
-
+#include "esp_err.h"
 #include <stdint.h>
 
 typedef struct {
-    float   cpu_percent;
-    float   mem_percent;
-    uint64_t net_tx_bytes;
-    uint64_t net_rx_bytes;
-    uint64_t uptime_seconds;
-} proxmox_node_status_t;
+    float    cpu;     /* 0.0–1.0 */
+    uint64_t mem;     /* bytes utilisés */
+    uint64_t maxmem;  /* bytes totaux */
+    uint64_t netout;  /* TX cumulatif en bytes */
+    uint64_t netin;   /* RX cumulatif en bytes */
+    uint32_t uptime;  /* secondes */
+} proxmox_data_t;
 
-/**
- * @brief Fetch node status from the Proxmox API.
- *
- * @param[out] status  Populated on success.
- * @return             0 on success, non-zero on error.
- */
-int proxmox_client_get_status(proxmox_node_status_t *status);
+esp_err_t proxmox_parse_response(const char *json, proxmox_data_t *out);
+esp_err_t proxmox_client_init(void);
+esp_err_t proxmox_client_fetch(proxmox_data_t *out);

@@ -1,7 +1,6 @@
 #pragma once
+#include "esp_err.h"
+#include <stdbool.h>
 
-/**
- * @brief Initialize WiFi and connect to the configured SSID.
- *        Blocks until connected or fails.
- */
-void wifi_manager_init(void);
+esp_err_t wifi_manager_init(void);
+bool      wifi_manager_is_connected(void);
