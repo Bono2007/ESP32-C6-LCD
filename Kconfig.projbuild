@@ -1,0 +1,52 @@
+menu "Proxmox Display Configuration"
+
+    menu "WiFi"
+        config WIFI_SSID
+            string "WiFi SSID"
+            default "myssid"
+        config WIFI_PASSWORD
+            string "WiFi Password"
+            default "mypassword"
+    endmenu
+
+    menu "Proxmox API"
+        config PROXMOX_HOST
+            string "Proxmox Host"
+            default "10.0.0.1"
+        config PROXMOX_PORT
+            int "Proxmox Port"
+            default 8006
+        config PROXMOX_NODE
+            string "Proxmox Node Name"
+            default "pve"
+        config PROXMOX_API_TOKEN
+            string "API Token (USER@REALM!TOKENID=SECRET)"
+            default ""
+    endmenu
+
+    menu "Display GPIO"
+        config LCD_CLK_GPIO
+            int "SPI Clock GPIO"
+            default 6
+        config LCD_MOSI_GPIO
+            int "SPI MOSI GPIO"
+            default 7
+        config LCD_CS_GPIO
+            int "LCD CS GPIO"
+            default 14
+        config LCD_DC_GPIO
+            int "LCD DC GPIO"
+            default 15
+        config LCD_RST_GPIO
+            int "LCD Reset GPIO"
+            default 21
+        config LCD_BL_GPIO
+            int "LCD Backlight GPIO"
+            default 22
+    endmenu
+
+    config REFRESH_INTERVAL_MS
+        int "Refresh interval (ms)"
+        default 15000
+
+endmenu
