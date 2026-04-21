@@ -2,7 +2,9 @@
 
 Dashboard temps réel sur écran LCD 1.47" (ST7789, 172×320 px) affichant les métriques d'un serveur Proxmox via son API REST HTTPS.
 
-![Board](https://spotpear.com/wiki/images/thumb/e/e3/ESP32-C6-1.47-LCD-1.jpg/400px-ESP32-C6-1.47-LCD-1.jpg)
+![Dashboard](assets/screenshot.png)
+
+*Board : Spotpear ESP32-C6 LCD 1.47"*
 
 ## Matériel requis
 
