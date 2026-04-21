@@ -2,10 +2,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "display_driver.h"
-#include "wifi_manager.h"
+#include "dashboard_ui.h"
 #include "lvgl.h"
-
-static const char *TAG = "main";
 
 static void lvgl_task(void *arg)
 {
@@ -17,22 +15,19 @@ static void lvgl_task(void *arg)
 
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Proxmox Display starting...");
     ESP_ERROR_CHECK(display_driver_init());
+    dashboard_ui_init();
     xTaskCreate(lvgl_task, "lvgl", 4096, NULL, 5, NULL);
 
-    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x0a0a1a), 0);
-    lv_obj_t *label = lv_label_create(lv_scr_act());
-    lv_obj_set_style_text_color(label, lv_color_hex(0xf59e0b), 0);
-    lv_label_set_text(label, "WiFi...");
-    lv_obj_center(label);
-
-    esp_err_t ret = wifi_manager_init();
-    if (ret == ESP_OK) {
-        lv_label_set_text(label, "WiFi OK");
-        lv_obj_set_style_text_color(label, lv_color_hex(0x10b981), 0);
-    } else {
-        lv_label_set_text(label, "WiFi FAIL");
-        lv_obj_set_style_text_color(label, lv_color_hex(0xef4444), 0);
-    }
+    ui_data_t mock = {
+        .cpu_pct       = 67.0f,
+        .mem_gb        = 12.4f,
+        .maxmem_gb     = 32.0f,
+        .tx_mbps       = 2.3f,
+        .rx_mbps       = 8.1f,
+        .uptime_s      = 14 * 86400 + 7 * 3600 + 32 * 60,
+        .connected     = true,
+        .last_update_s = 3,
+    };
+    dashboard_ui_update(&mock);
 }
